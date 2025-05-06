@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 1rem;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .filter-controls {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .filter-controls input {
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+
+    .summary {
+      text-align: center;
+      margin: 1rem 0;
+      font-weight: bold;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: #fff;
+      padding: 1rem;
+      margin-bottom: 0.5rem;
+      border-radius: 5px;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+    }
+
+    a {
+      display: block;
+      text-align: center;
+      margin-top: 1rem;
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+    .edit-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  margin-left: 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.3s ease;
+}
+
+.edit-btn:hover {
+  background-color: #0056b3;
+}
+
+  </style>
+</head>
+
+<body>
+  <h1>💸 Expense Viewer</h1>
+
+  <div class="filter-controls">
+    <label>
+      📅 Select Date:
+      <input type="date" id="filter-date" />
+    </label>
+    <label>
+      📆 Select Month:
+      <input type="month" id="filter-month" />
+    </label>
+  </div>
+
+  <div class="summary" id="summary-text">Showing all expenses</div>
+
+  <ul id="expense-list"></ul>
+
+  <a href="index.html">⬅ Back to Planner</a>
+  <button onclick="clearExpenses()"
+    style="background-color: #ff4444; color: white; margin: 2rem auto 1rem; display: block; padding: 0.6rem 1.2rem; border: none; border-radius: 5px; cursor: pointer;">
+    🗑 Clear All Expenses
+  </button>
+
+
+  <script>
+    const expenseList = document.getElementById('expense-list');
+    const summaryText = document.getElementById('summary-text');
+    const dateInput = document.getElementById('filter-date');
+    const monthInput = document.getElementById('filter-month');
+
+    // Load expenses based on filter
+    function loadExpenses(filterType = "all", value = "") {
+      const expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+      let filtered = [];
+
+      if (filterType === "date") {
+        filtered = expenses.filter(exp => exp.date === value);
+        summaryText.textContent = `Showing expenses for ${value}`;
+      } else if (filterType === "month") {
+        filtered = expenses.filter(exp => exp.date.startsWith(value));
+        summaryText.textContent = `Showing expenses for ${value}`;
+      } else {
+        filtered = expenses;
+        summaryText.textContent = `Showing all expenses`;
+      }
+
+      let total = 0;
+      expenseList.innerHTML = "";
+
+      filtered.forEach(exp => {
+        total += parseFloat(exp.amount);
+        const li = document.createElement("li");
+
+        // Display expense details
+        li.innerHTML = `${exp.date}: ₹${exp.amount} - ${exp.desc} (${exp.category})`;
+
+        // Add an edit button
+        const editButton = document.createElement("button");
+        editButton.textContent = "✏️ Edit";
+        editButton.classList.add("edit-btn");
+
+        editButton.style.marginLeft = "10px";
+        editButton.onclick = () => editExpense(exp.id);
+
+        li.appendChild(editButton);
+        expenseList.appendChild(li);
+      });
+
+      if (filtered.length > 0) {
+        summaryText.textContent += ` — Total: ₹${total.toFixed(2)}`;
+      } else {
+        summaryText.textContent += ` — No records found`;
+      }
+    }
+
+    // Edit a specific expense
+    function editExpense(expenseId) {
+      const expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+      const expenseToEdit = expenses.find(exp => exp.id === expenseId);
+
+      if (expenseToEdit) {
+        const newAmount = prompt("Enter new amount:", expenseToEdit.amount);
+        const newDesc = prompt("Enter new description:", expenseToEdit.desc);
+        const newCategory = prompt("Enter new category:", expenseToEdit.category);
+
+        expenseToEdit.amount = newAmount;
+        expenseToEdit.desc = newDesc;
+        expenseToEdit.category = newCategory;
+
+        localStorage.setItem("expenses", JSON.stringify(expenses));
+        loadExpenses();
+      }
+    }
+
+    // Clear expenses for selected date
+    function clearExpenses() {
+      const selectedDate = dateInput.value;
+      if (!selectedDate) {
+        alert("Please select a date to clear the expenses.");
+        return;
+      }
+
+      if (confirm(`Are you sure you want to delete all expenses for ${selectedDate}?`)) {
+        const expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+        const updatedExpenses = expenses.filter(exp => exp.date !== selectedDate);
+        localStorage.setItem("expenses", JSON.stringify(updatedExpenses));
+        loadExpenses();
+      }
+    }
+
+    // Filter event listeners
+    dateInput.addEventListener("change", () => {
+      loadExpenses("date", dateInput.value);
+    });
+
+    monthInput.addEventListener("change", () => {
+      loadExpenses("month", monthInput.value);
+    });
+
+    // Initial load
+    loadExpenses();
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,319 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Planner</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: sans-serif;
+      background: #fff;
+      color: #333;
+      padding: 10px;
+    }
+
+    .planner-container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 1rem;
+      background: #f9f9f9;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .box {
+      background: #fff0f3;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    input,
+    textarea,
+    button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      border-radius: 5px;
+    }
+
+    button {
+      background: #ff5b77;
+      color: white;
+      border: none;
+    }
+
+    button:hover {
+      background: #e64766;
+    }
+
+    textarea {
+      resize: none;
+    }
+
+    .link {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .link a {
+      text-decoration: none;
+      color: #007bff;
+    }
+  </style>
+</head>
+<body>
+  <div class="planner-container">
+    <header>
+      <h1>🗓 Daily Planner</h1>
+      <input type="date" id="date-picker" />
+    </header>
+    <section class="grid">
+      <div class="box">
+        <h2>Today's Goals</h2>
+        <ul>
+          <li><input type="text" id="goal1" placeholder="Goal 1" /></li>
+          <li><input type="text" id="goal2" placeholder="Goal 2" /></li>
+          <li><input type="text" id="goal3" placeholder="Goal 3" /></li>
+        </ul>
+      </div>
+
+      <div class="box">
+        <h2>Appointments</h2>
+        <input type="text" id="appointments" placeholder="Time - Event" />
+      </div>
+
+      <div class="box">
+        <h2>Meal Tracker</h2>
+        <input type="text" id="breakfast" placeholder="Breakfast" />
+        <input type="text" id="lunch" placeholder="Lunch" />
+        <input type="text" id="dinner" placeholder="Dinner" />
+        <input type="text" id="snacks" placeholder="Snacks" />
+      </div>
+
+      <div class="box">
+        <h2>Mood🌝</h2>
+        <input type="text" id="mood" placeholder="Your Mood" oninput="suggestMotivation()" />
+        <p id="motivation"></p>
+      </div>
+
+      <div class="box">
+        <h2>Weather</h2>
+        <input type="text" id="weather" placeholder="e.g. Sunny, 28°C" />
+      </div>
+
+      <div class="box">
+        <h2>Water Intake</h2>
+        <input type="number" id="water" placeholder="Cups Drank" />
+      </div>
+
+      <div class="box">
+        <h2>Exercise</h2>
+        <input type="number" id="exercise-min" placeholder="Minutes" />
+        <input type="number" id="exercise-steps" placeholder="Steps" />
+      </div>
+
+      <div class="box">
+        <h2>Reminder</h2>
+        <textarea id="reminder" placeholder="Don't forget to..."></textarea>
+      </div>
+
+      <div class="box">
+        <h2>Today I'm Grateful For</h2>
+        <textarea id="grateful" placeholder="Something good..."></textarea>
+      </div>
+
+      <div class="box">
+        <h2>Notes</h2>
+        <textarea id="notes" placeholder="Any notes..."></textarea>
+      </div>
+
+      <div class="box">
+        <h2>💸 Expense Tracker</h2>
+        <input type="text" id="desc" placeholder="Expense Description" />
+        <input type="number" id="amount" placeholder="Amount (₹)" />
+        <input type="text" id="category" placeholder="Category" />
+        <button onclick="saveExpense()">💾 Save Expense</button>
+        <hr>
+        <h3>Saved Expenses</h3>
+        <ul id="expense-list"></ul>
+      </div>
+
+      <div class="box">
+        <button onclick="savePlanner()">💾 Save Daily Plan</button>
+      </div>
+    </section>
+    <div class="link">
+      <a href="expenses.html">Go to Expense Sheet ➜</a>
+    </div>
+  </div>
+  <div style="text-align: center; margin-top: 1rem;">
+    <button onclick="resetPlanner()" style="background-color:#f39c12; color:white; padding: 0.8rem 1.5rem; border: none; border-radius: 5px; cursor: pointer; width: auto; display: inline-block;">
+      🔄 Reset Planner
+    </button>
+  </div>
+  
+
+  <script>
+    const motivationMessages = {
+      happy: "Keep shining! 😊",
+      sad: "It's okay to have bad days. Stay strong! 💪",
+      tired: "Rest is important. Take a break. 💤",
+      angry: "Breathe. You got this. 🌬️",
+      excited: "Keep that energy going! 🚀",
+      anxious: "You are capable of handling this. 🌈",
+    };
+
+    function suggestMotivation() {
+      const mood = document.getElementById("mood").value.toLowerCase();
+      const msg = motivationMessages[mood] || "Stay positive and keep going! 🌟";
+      document.getElementById("motivation").textContent = msg;
+    }
+
+    const datePicker = document.getElementById("date-picker");
+
+    datePicker.addEventListener("change", loadPlanner);
+    window.onload = () => {
+      const today = new Date().toISOString().split("T")[0];
+      datePicker.value = today;
+      loadPlanner();
+    };
+
+    function savePlanner() {
+      const date = datePicker.value;
+      const data = {
+        goals: ["goal1", "goal2", "goal3"].map(id => document.getElementById(id).value),
+        appointments: document.getElementById("appointments").value,
+        meals: {
+          breakfast: document.getElementById("breakfast").value,
+          lunch: document.getElementById("lunch").value,
+          dinner: document.getElementById("dinner").value,
+          snacks: document.getElementById("snacks").value
+        },
+        mood: document.getElementById("mood").value,
+        weather: document.getElementById("weather").value,
+        water: document.getElementById("water").value,
+        exercise: {
+          min: document.getElementById("exercise-min").value,
+          steps: document.getElementById("exercise-steps").value
+        },
+        reminder: document.getElementById("reminder").value,
+        grateful: document.getElementById("grateful").value,
+        notes: document.getElementById("notes").value,
+      };
+      localStorage.setItem("planner-" + date, JSON.stringify(data));
+      alert("Plan saved successfully!");
+    }
+
+    function loadPlanner() {
+      const date = datePicker.value;
+      const saved = JSON.parse(localStorage.getItem("planner-" + date));
+      if (saved) {
+        ["goal1", "goal2", "goal3"].forEach((id, i) => document.getElementById(id).value = saved.goals[i] || "");
+        document.getElementById("appointments").value = saved.appointments || "";
+        document.getElementById("breakfast").value = saved.meals?.breakfast || "";
+        document.getElementById("lunch").value = saved.meals?.lunch || "";
+        document.getElementById("dinner").value = saved.meals?.dinner || "";
+        document.getElementById("snacks").value = saved.meals?.snacks || "";
+        document.getElementById("mood").value = saved.mood || "";
+        suggestMotivation();
+        document.getElementById("weather").value = saved.weather || "";
+        document.getElementById("water").value = saved.water || "";
+        document.getElementById("exercise-min").value = saved.exercise?.min || "";
+        document.getElementById("exercise-steps").value = saved.exercise?.steps || "";
+        document.getElementById("reminder").value = saved.reminder || "";
+        document.getElementById("grateful").value = saved.grateful || "";
+        document.getElementById("notes").value = saved.notes || "";
+      }
+      loadExpenses();
+    }
+
+    function saveExpense() {
+      const desc = document.getElementById('desc').value.trim();
+      const amount = parseFloat(document.getElementById('amount').value);
+      const category = document.getElementById('category').value.trim();
+      const date = datePicker.value;
+
+      if (!desc || isNaN(amount) || !category) {
+        alert("Please fill all fields correctly!");
+        return;
+      }
+
+      const newExpense = { desc, amount, category, date };
+      let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+      expenses.push(newExpense);
+      localStorage.setItem("expenses", JSON.stringify(expenses));
+
+      document.getElementById('desc').value = "";
+      document.getElementById('amount').value = "";
+      document.getElementById('category').value = "";
+
+      loadExpenses();
+    }
+
+    function loadExpenses() {
+      const list = document.getElementById('expense-list');
+      list.innerHTML = "";
+      const expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+      const selectedDate = datePicker.value;
+
+      expenses.filter(exp => exp.date === selectedDate).forEach(exp => {
+        const li = document.createElement("li");
+        li.textContent = `₹${exp.amount} - ${exp.desc} (${exp.category})`;
+        list.appendChild(li);
+      });
+    }
+    function resetPlanner() {
+  // Reset all input fields and textareas
+  document.getElementById("goal1").value = "";
+  document.getElementById("goal2").value = "";
+  document.getElementById("goal3").value = "";
+  document.getElementById("appointments").value = "";
+  document.getElementById("breakfast").value = "";
+  document.getElementById("lunch").value = "";
+  document.getElementById("dinner").value = "";
+  document.getElementById("snacks").value = "";
+  document.getElementById("mood").value = "";
+  document.getElementById("weather").value = "";
+  document.getElementById("water").value = "";
+  document.getElementById("exercise-min").value = "";
+  document.getElementById("exercise-steps").value = "";
+  document.getElementById("reminder").value = "";
+  document.getElementById("grateful").value = "";
+  document.getElementById("notes").value = "";
+  
+  // Optionally, remove any saved data from localStorage for the current date
+  const date = document.getElementById("date-picker").value;
+  localStorage.removeItem("planner-" + date);
+
+  // Optionally, clear any saved expenses for the day
+  const expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+  const selectedDate = date;
+  const updatedExpenses = expenses.filter(exp => exp.date !== selectedDate);
+  localStorage.setItem("expenses", JSON.stringify(updatedExpenses));
+
+  // Reload the planner to show the reset state
+  loadPlanner();
+}
+
+  </script>
+</body>
+</html>
